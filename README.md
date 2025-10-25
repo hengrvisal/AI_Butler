@@ -1,0 +1,1 @@
+this is an app for automating our everyday tasks
