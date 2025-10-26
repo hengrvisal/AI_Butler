@@ -1,12 +1,36 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model SourceCursor {
+  id        String   @id @default(cuid())
+  source    String   @unique // 'github' | 'notion'
+  cursor    String // ISO timestamp or Notion pagination cursor
+  updatedAt DateTime @updatedAt
+}
+
+model Highlight {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  title     String
+  summaryMd String // markdown bullet or short paragraph
+  url       String?
+  tags      Json? // use [] of strings in JSON, e.g. ["github", "ai"]
+  rawRefs   Json? // stroe commit/page refs
+  createdAt DateTime @default(now())
+}
+
+model RunLog {
+  id         String    @id @default(cuid())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  itemsIn    Int       @default(0)
+  itemsOut   Int       @default(0)
+  status     String // 'running' | 'success' | 'error'
+  error      String?
 }
