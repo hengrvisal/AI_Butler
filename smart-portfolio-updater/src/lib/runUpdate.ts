@@ -1,39 +1,33 @@
+// src/lib/runUpdate.ts
 import { db } from "@/lib/db";
-
-/**
- * minimal placeholdr for the update pipeline
- * planned work:
- *  - fetch GitHub commits since cursor
- *  - fetch Notion updates since cursor
- *  - summarize with OpenAI
- *  - write Highlights and move cursors
- */
+import { ingestGithub } from "./ingestGithub";
 
 export async function runUpdateJob(runId: string) {
-    // demo
-    const highlight = await db.highlight.create({
-        data: {
-            title: "manual run executed",
-            summaryMd: "- created by manual run (MVP). GitHub/Notion wiring next",
-            url: null,
-            tags: ["manual", "seed"] as unknown as any,
-            rawRefs: { source: "manual" } as unknown as any,
-        },
-    });
+  let itemsIn = 0;
+  let itemsOut = 0;
 
-    // can implement count real items later
-    const itemsIn = 1;
-    const itemsOut = 1;
+  // 1) Ingest GitHub commits
+  try {
+    const res = await ingestGithub();
+    itemsIn += res.count;   // “in” = raw units fetched (here equal to inserted)
+    itemsOut += res.count;  // “out” = highlights written (same for now)
+  } catch (e) {
+    // If GitHub fails, we still want the run to continue (you can choose to fail-fast instead)
+    console.error("GitHub ingest failed:", e);
+  }
 
-    await db.runLog.update({
-        where: {id: runId },
-        data: {
-            itemsIn,
-            itemsOut,
-            status: "success",
-            finishedAt: new Date(),
-        },
-    });
+  // (Optional) 2) Ingest Notion next — coming in the next step.
 
-    return { itemsIn, itemsOut, highlightId: highlight.id };
+  // Update run log
+  await db.runLog.update({
+    where: { id: runId },
+    data: {
+      itemsIn,
+      itemsOut,
+      status: "success",
+      finishedAt: new Date(),
+    },
+  });
+
+  return { itemsIn, itemsOut };
 }
