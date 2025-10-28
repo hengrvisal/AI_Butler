@@ -22,7 +22,7 @@ export async function summarizeCommits(items: summarizeInput): Promise<string> {
     const user = `Commits to summar:\n${list}`;
 
     const resp = await client.responses.create({
-        model: "gpt-5-mini",
+        model: "gpt-4.1-mini",
         input: [
             { role: "system", content: system },
             { role: "user", content: user},
