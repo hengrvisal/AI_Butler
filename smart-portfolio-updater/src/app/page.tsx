@@ -1,26 +1,105 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { db } from "@/lib/db";
+import HighlightCard from "@/components/highlight-card";
+import Filters from "./(site)/filters";
 
-const db = new PrismaClient();
+type Search = { tag?: string; q?: string; page?: string };
 
-export default async function Home() {
-  const highlights = await db.highlight.findMany({ orderBy: {date: 'desc' }, take: 10 });
+export default async function Home({
+  searchParams,
+}: {
+  // Next 15: searchParams is a Promise in server components
+  searchParams: Promise<Search>;
+}) {
+  const sp = await searchParams; // <- unwrap the Promise
+
+  const tag = (sp?.tag ?? "").trim();
+  const q = (sp?.q ?? "").trim();
+  const page = Math.max(1, parseInt(sp?.page ?? "1", 10) || 1);
+  const PAGE_SIZE = 10;
+
+  // Fetch a superset, then filter in memory (SQLite-friendly)
+  const all = await db.highlight.findMany({
+    orderBy: { date: "desc" },
+    take: 200,
+  });
+
+  const filtered = all
+    .filter((h) => {
+      if (!tag) return true;
+      try {
+        const tags = Array.isArray(h.tags) ? h.tags.map(String) : [];
+        return tags.includes(tag);
+      } catch {
+        return false;
+      }
+    })
+    .filter((h) => {
+      if (!q) return true;
+      const blob = `${h.title}\n${h.summaryMd}`.toLowerCase();
+      return blob.includes(q.toLowerCase());
+    });
+
+  const total = filtered.length;
+  const start = (page - 1) * PAGE_SIZE;
+  const items = filtered.slice(start, start + PAGE_SIZE);
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <h1 className="text-3xl font-bold">Smart Resume/Portfolio Updater</h1>
-      <p className="mt-2 text-muted-foreground">
-        MVP scaffold is running. We will add Highlights, Cron, GitHub/Notion next.
-      </p>
+    <main className="mx-auto max-w-3xl p-6 space-y-6">
+      <header>
+        <h1 className="text-3xl font-bold">Smart Resume/Portfolio Updater</h1>
+        <p className="text-neutral-600">
+          Auto-aggregated highlights from GitHub (and more soon).
+        </p>
+      </header>
 
-      <h2 className="text-xl font-semibold mt-6 mb-2">Latest Highlights</h2>
-      <ul className="space-y-3">
-        {highlights.map(h => (
-          <li key={h.id} className="prose">
-            <div className="font-medium">{h.title}</div>
-            <div dangerouslySetInnerHTML={{ __html: h.summaryMd.replace(/\n/g, '<br/>') }} />
-          </li>
-        ))}
-      </ul>
+      <Filters initialTag={tag} initialQ={q} />
+
+      {items.length === 0 ? (
+        <div className="rounded-xl border p-6 text-neutral-600">
+          No highlights match your filters.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {items.map((h) => (
+            <HighlightCard key={h.id} h={h as any} />
+          ))}
+        </div>
+      )}
+
+      <nav className="flex items-center justify-between pt-4">
+        <span className="text-sm text-neutral-600">
+          Showing {total === 0 ? 0 : start + 1}–
+          {Math.min(total, start + PAGE_SIZE)} of {total}
+        </span>
+        <div className="flex gap-2">
+          <a
+            className={`rounded-md border px-3 py-1.5 text-sm ${
+              page <= 1 ? "pointer-events-none opacity-50" : "hover:bg-neutral-100"
+            }`}
+            href={`/?${new URLSearchParams({
+              ...(tag && { tag }),
+              ...(q && { q }),
+              page: String(page - 1),
+            }).toString()}`}
+          >
+            Prev
+          </a>
+          <a
+            className={`rounded-md border px-3 py-1.5 text-sm ${
+              start + PAGE_SIZE >= total
+                ? "pointer-events-none opacity-50"
+                : "hover:bg-neutral-100"
+            }`}
+            href={`/?${new URLSearchParams({
+              ...(tag && { tag }),
+              ...(q && { q }),
+              page: String(page + 1),
+            }).toString()}`}
+          >
+            Next
+          </a>
+        </div>
+      </nav>
     </main>
-  )
+  );
 }
