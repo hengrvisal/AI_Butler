@@ -43,6 +43,11 @@ export default async function Home({
   const total = filtered.length;
   const start = (page - 1) * PAGE_SIZE;
   const items = filtered.slice(start, start + PAGE_SIZE);
+  const lastRun = await db.runLog.findFirst({
+    where: { status: "success" },
+    orderBy: { finishedAt: "desc" },
+    select: { finishedAt: true },
+  });
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-6">
@@ -101,6 +106,10 @@ export default async function Home({
           </a>
         </div>
       </nav>
+
+      <footer className="pt-6 text-sm text-neutral-600">
+        Last updated: {lastRun?.finishedAt ? new Date(lastRun.finishedAt).toLocaleString() : "-"}
+      </footer>
     </main>
   );
 }
