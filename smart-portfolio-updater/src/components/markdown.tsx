@@ -6,33 +6,40 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { Components } from "react-markdown";
 
+// Local prop type for the <code> renderer
+type CodeProps = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLElement>,
+  HTMLElement
+> & {
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+};
+
+const Code = ({ inline, className, children, ...props }: CodeProps) => {
+  if (inline) {
+    return (
+      <code {...props} className="px-1 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800">
+        {children}
+      </code>
+    );
+  }
+  return (
+    <pre className={className}>
+      <code {...props}>{children}</code>
+    </pre>
+  );
+};
+
 const mdComponents: Components = {
-  a({ node, ...props }) {
+  a(props) {
     return <a {...props} className="underline underline-offset-4 hover:opacity-80" />;
   },
-  li({ node, ...props }) {
+  li(props) {
     return <li {...props} className="my-1" />;
   },
-  code({ 
-    node, 
-    inline, 
-    className, 
-    children, 
-    ...props }: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { inline?: boolean }) {
-    // `inline` is correctly typed via `Components`
-    if (inline) {
-      return (
-        <code {...props} className="px-1 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800">
-          {children}
-        </code>
-      );
-    }
-    return (
-      <pre className={className}>
-        <code {...props}>{children}</code>
-      </pre>
-    );
-  },
+  // ✅ Properly typed without importing internal react-markdown modules
+  code: Code as unknown as Components["code"],
 };
 
 export default function Markdown({ children }: { children: string }) {
