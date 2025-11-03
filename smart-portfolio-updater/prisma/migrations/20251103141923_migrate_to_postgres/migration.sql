@@ -1,32 +1,38 @@
 -- CreateTable
 CREATE TABLE "SourceCursor" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "source" TEXT NOT NULL,
     "cursor" TEXT NOT NULL,
-    "updatedAt" DATETIME NOT NULL
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SourceCursor_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Highlight" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "date" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "id" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "title" TEXT NOT NULL,
     "summaryMd" TEXT NOT NULL,
     "url" TEXT,
     "tags" JSONB,
     "rawRefs" JSONB,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Highlight_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "RunLog" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "startedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "finishedAt" DATETIME,
+    "id" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "finishedAt" TIMESTAMP(3),
     "itemsIn" INTEGER NOT NULL DEFAULT 0,
     "itemsOut" INTEGER NOT NULL DEFAULT 0,
     "status" TEXT NOT NULL,
-    "error" TEXT
+    "error" TEXT,
+
+    CONSTRAINT "RunLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
