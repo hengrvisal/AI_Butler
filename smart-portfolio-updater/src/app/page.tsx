@@ -1,30 +1,25 @@
+// src/app/page.tsx
 import { db } from "@/lib/db";
+import type { Highlight } from "@prisma/client";  // ✅ add this
 import HighlightCard from "@/components/highlight-card";
 import Filters from "./(site)/filters";
 
-type Search = { tag?: string; q?: string; page?: string };
-
-export default async function Home({
-  searchParams,
-}: {
-  // Next 15: searchParams is a Promise in server components
-  searchParams: Promise<Search>;
-}) {
-  const sp = await searchParams; // <- unwrap the Promise
-
+export default async function Home({ searchParams }: { searchParams: Promise<{ tag?: string; q?: string; page?: string }> }) {
+  const sp = await searchParams;
   const tag = (sp?.tag ?? "").trim();
   const q = (sp?.q ?? "").trim();
   const page = Math.max(1, parseInt(sp?.page ?? "1", 10) || 1);
   const PAGE_SIZE = 10;
 
-  // Fetch a superset, then filter in memory (SQLite-friendly)
-  const all = await db.highlight.findMany({
+  // ✅ type the result so .filter infers `h: Highlight`
+  const all: Highlight[] = await db.highlight.findMany({
     orderBy: { date: "desc" },
     take: 200,
   });
 
+  // if you have a helper to parse JSON tags, you can import it; otherwise inline:
   const filtered = all
-    .filter((h) => {
+    .filter((h: Highlight) => {                     // ✅ annotate param or rely on all: Highlight[]
       if (!tag) return true;
       try {
         const tags = Array.isArray(h.tags) ? h.tags.map(String) : [];
@@ -33,7 +28,7 @@ export default async function Home({
         return false;
       }
     })
-    .filter((h) => {
+    .filter((h: Highlight) => {
       if (!q) return true;
       const blob = `${h.title}\n${h.summaryMd}`.toLowerCase();
       return blob.includes(q.toLowerCase());
