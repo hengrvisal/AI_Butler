@@ -27,10 +27,7 @@ export default async function AdminPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {logs.map((l: {
-                                id: string; startedAt: Date; finishedAt: Date | null;
-                                itemsIn: number; itemsOut: number; status: string; error: string | null;
-                            }) => (
+                            {logs.map((l) => (
                                 <tr key={l.id} className="border-b">
                                     <td className="py-2">{new Date(l.startedAt).toLocaleDateString()}</td>
                                     <td className="py-2">{l.status}</td>
